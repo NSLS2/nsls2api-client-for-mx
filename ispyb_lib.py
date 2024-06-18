@@ -3,10 +3,13 @@ import nsls2api_lib
 from datetime import datetime
 import time
 import mysql.connector
+import os
 import logging
 logger = logging.getLogger(__name__)
 
-conn = ispyb.open("/etc/ispyb/ispybConfig.cfg")
+ispyb_db = os.getenv('ISPYB_DB', "ispyb")
+logger.info(f"Making ISPyB connection using database: {ispyb_db}")
+conn = ispyb.open(f"/etc/ispyb/{ispyb_db}Config.cfg")
 cnx = conn.conn
 cursor = cnx.cursor()
 core = ispyb.factory.create_data_area(ispyb.factory.DataAreaType.CORE, conn)
