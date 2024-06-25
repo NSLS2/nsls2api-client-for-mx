@@ -4,17 +4,17 @@ import ispyb_lib
 import nsls2api_lib
 import argparse
 import sys
-
+import logging
 
 def main(args=[]):
     parser = argparse.ArgumentParser(
         description="Create or update people, visit, and proposal information in ISPyB. Currently restricted to one visit per proposal, and these visits are assigned to 'amx' due to the lack of visit information in NSLS2API."
     )
     parser.add_argument(
-            "--cycle",
-            type=str,
-            default=nsls2api_lib.get_current_cycle(),
-            help=f"Cycle to create/update people, visits, and proposals for. Default is current cycle ({nsls2api_lib.get_current_cycle()})"
+        "--cycle",
+        type=str,
+        default=nsls2api_lib.get_current_cycle(),
+        help=f"Cycle to create/update people, visits, and proposals for. Default is current cycle ({nsls2api_lib.get_current_cycle()})",
     )
     parser.add_argument(
         "--verbose",
@@ -41,12 +41,21 @@ def main(args=[]):
     cycle = args.cycle
     dry_run = args.dry_run
 
-    cycle_proposals = nsls2api_lib.get_proposals_from_cycle(cycle)
+    cycle_proposals = nsls2api_lib.get_proposal_ids_for_cycle_instruments(
+        cycle, nsls2api_lib.ispyb_instruments
+    )
     for proposal in cycle_proposals:
+        print(f"Adding/updating users for proposal {proposal}")
         proposal_info = nsls2api_lib.get_proposal_info(proposal)
-        if nsls2api_lib.is_ispyb_instrument(proposal_info["instruments"]):
-            print(f"Adding/updating users for proposal {proposal}")
-            ispyb_lib.reset_users_for_proposal(proposal, dry_run=dry_run)
+        ispyb_lib.add_usernames_for_proposal(
+            proposal,
+            nsls2api_lib.get_usernames_from_proposal(proposal),
+            nsls2api_lib.get_users_from_proposal(proposal),
+            proposal_info["instruments"][0],
+            dry_run=dry_run,
+        )
+        ispyb_lib.reset_users_for_proposal(proposal, dry_run=dry_run)
+
 
 if __name__ == "__main__":
     main()
